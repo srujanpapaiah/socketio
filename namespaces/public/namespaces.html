@@ -43,8 +43,8 @@
 
 <script>
   // socket.io.js is going to add the io object the global scope
-  const socket = io("http://localhost:9002");
-  const adminsocket = io("http://localhost:9002/admin");
+  const socket = io("http://localhost:8080");
+  const adminsocket = io("http://localhost:8080/admin");
 
   socket.on("connect", () => {
     console.log("Successfully joined the main ns");

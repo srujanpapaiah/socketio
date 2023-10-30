@@ -1,14 +1,15 @@
-// const userName = prompt("What is your username?");
+const userName = prompt("What is your username?");
 // const password = prompt("What is your password?");
 
-const userName = "sru";
-const password = "x";
+// const userName = "sru";
+// const password = "x";
 
-const socket = io("http://localhost:9002");
+const socket = io("http://localhost:8080");
 
 const nameSpaceSockets = [];
 const listeners = {
   nsChange: [],
+  messageToRoom: [],
 };
 
 let selectedNsId = 0;
@@ -21,7 +22,9 @@ document.querySelector("#message-form").addEventListener("submit", (e) => {
     newMessage,
     date: Date.now(),
     userName,
+    selectedNsId,
   });
+  document.querySelector("#user-message").value = "";
 });
 
 const addListeneres = (nsId) => {
@@ -31,6 +34,14 @@ const addListeneres = (nsId) => {
       console.log(data);
     });
     listeners.nsChange[nsId] = true;
+  }
+  if (!listeners.messageToRoom[nsId]) {
+    nameSpaceSockets[nsId].on("messageToRoom", (messageObj) => {
+      console.log(messageObj);
+      document.querySelector("#messages").innerHTML +=
+        buildMessageHtml(messageObj);
+    });
+    listeners.messageToRoom[nsId] = true;
   }
 };
 
@@ -54,7 +65,7 @@ socket.on("nsList", (nsData) => {
     if (!nameSpaceSockets[ns.id]) {
       //There is no socket at this nsId. So make a new connection!
       //joining multiple namespaces
-      nameSpaceSockets[ns.id] = io(`http://localhost:9002${ns.endpoint}`);
+      nameSpaceSockets[ns.id] = io(`http://localhost:8080${ns.endpoint}`);
     }
     addListeneres(ns.id);
   });

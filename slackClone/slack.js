@@ -7,13 +7,13 @@ const Room = require("./classes/Room");
 
 app.use(express.static(__dirname + "/public"));
 
-const expressServer = app.listen(9002, () => {
-  console.log("listening on port 9002");
+const expressServer = app.listen(8080, () => {
+  console.log("listening on port 8080");
 });
 
 const io = socketio(expressServer, {
   cors: {
-    origin: "http://127.0.0.1:9002",
+    origin: "http://127.0.0.1:8080",
     methods: ["GET", "POST"],
   },
 });
@@ -36,7 +36,14 @@ io.on("connection", (socket) => {
 
 namespaces.forEach((namespace) => {
   io.of(namespace.endpoint).on("connection", (socket) => {
-    socket.on("joinRoom", async (roomTitle, ackCallBack) => {
+    socket.on("joinRoom", async (roomObj, ackCallBack) => {
+      // fetch history
+      const thisNs = namespaces[roomObj.namespaceId];
+      const thisRoomObj = thisNs.rooms.find(
+        (room) => room.roomTitle === roomObj.roomTitle
+      );
+      const thisRoomHistory = thisRoomObj.history;
+
       // leave all rooms(except own room), because the client can only be in one room
       const rooms = socket.rooms;
       let i = 0;
@@ -49,23 +56,30 @@ namespaces.forEach((namespace) => {
       });
       // roomTitle is coming from the client which is not safe
       // Auth to make sure the socket has right to be in that room.
-      socket.join(roomTitle);
+      socket.join(roomObj.roomTitle);
 
       //fetch the number of sockets in this room
       const sockets = await io
         .of(namespace.endpoint)
-        .in(roomTitle)
+        .in(roomObj.roomTitle)
         .fetchSockets();
       const socketCount = sockets.length;
-      ackCallBack({ numUsers: socketCount });
+      ackCallBack({ numUsers: socketCount, thisRoomHistory });
     });
 
     socket.on("newMessageToRoom", (messageObj) => {
       const rooms = socket.rooms;
-      const currentRoom = rooms[1];
+      const currentRoom = [...rooms][1];
       io.of(namespace.endpoint)
         .in(currentRoom)
         .emit("messageToRoom", messageObj);
+
+      const thisNs = namespaces[messageObj.selectedNsId];
+      const thisRoom = thisNs.rooms.find(
+        (room) => room.roomTitle === currentRoom
+      );
+      thisRoom.addMessage(messageObj);
+      console.log(thisRoom);
     });
   });
 });

@@ -4,13 +4,13 @@ const socketio = require("socket.io");
 
 app.use(express.static(__dirname + "/public"));
 
-const expressServer = app.listen(9002, () => {
-  console.log("listening on port 9002");
+const expressServer = app.listen(8080, () => {
+  console.log("listening on port 8080");
 });
 
 const io = socketio(expressServer, {
   cors: {
-    origin: "http://127.0.0.1:9002",
+    origin: "http://127.0.0.1:8080",
     methods: ["GET", "POST"],
   },
 });
